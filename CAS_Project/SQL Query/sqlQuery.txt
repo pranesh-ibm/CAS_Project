@@ -19,7 +19,7 @@ CREATE TABLE dbo.Patient (
     summary VARCHAR(250) NULL,
     CONSTRAINT fk_patients_users
         FOREIGN KEY (user_id)
-        REFERENCES dbo.users(user_id),
+        REFERENCES dbo.[User](user_id),
     CONSTRAINT chk_gender
         CHECK (gender IN ('Male', 'Female', 'Other'))
 );
@@ -34,7 +34,7 @@ CREATE TABLE dbo.Physician (
     specialization VARCHAR(150) NOT NULL,
     CONSTRAINT fk_physician_users
         FOREIGN KEY (user_id)
-        REFERENCES dbo.users(user_id)
+        REFERENCES dbo.[User](user_id)
 );
 
 CREATE TABLE dbo.Chemist (
@@ -46,7 +46,7 @@ CREATE TABLE dbo.Chemist (
     address varchar(255),
     CONSTRAINT fk_chemist_users
         FOREIGN KEY (user_id)
-        REFERENCES dbo.users(user_id)
+        REFERENCES dbo.[User](user_id)
 );
 
 CREATE TABLE dbo.Supplier (
@@ -59,7 +59,7 @@ CREATE TABLE dbo.Supplier (
     company_name VARCHAR(200) NOT NULL,
     CONSTRAINT fk_suppliers_users
         FOREIGN KEY (user_id)
-        REFERENCES dbo.users(user_id)
+        REFERENCES dbo.[User](user_id)
 );
 
 CREATE TABLE dbo.Drug (
@@ -79,7 +79,7 @@ CREATE TABLE dbo.Appointment (
 
     CONSTRAINT fk_appointment_patient
         FOREIGN KEY (patient_id)
-        REFERENCES dbo.patients(patient_id),
+        REFERENCES dbo.patient(patient_id),
 
     CONSTRAINT fk_appointment_physician
         FOREIGN KEY (physician_id)
@@ -161,7 +161,7 @@ CREATE TABLE dbo.PurchaseOrderHeader (
 
     CONSTRAINT fk_po_supplier
         FOREIGN KEY (supplier_id)
-        REFERENCES dbo.suppliers(supplier_id),
+        REFERENCES dbo.supplier(supplier_id),
 
     CONSTRAINT fk_po_chemist
         FOREIGN KEY (chemist_id)
