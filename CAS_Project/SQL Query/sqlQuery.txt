@@ -1,0 +1,199 @@
+﻿use CAS;
+
+CREATE TABLE dbo.[User] (
+    user_id INT IDENTITY(1,1) PRIMARY KEY,
+    role varchar(50) NOT NULL,
+    user_name VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE dbo.Patient (
+    patient_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    full_name varchar not null,
+    email varchar not null,
+    phone varchar(15) unique,
+    address varchar(250),
+    gender VARCHAR(10) NOT NULL,
+    dob DATE NULL,
+    summary VARCHAR(250) NULL,
+    CONSTRAINT fk_patients_users
+        FOREIGN KEY (user_id)
+        REFERENCES dbo.users(user_id),
+    CONSTRAINT chk_gender
+        CHECK (gender IN ('Male', 'Female', 'Other'))
+);
+
+CREATE TABLE dbo.Physician (
+    physician_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    full_name varchar not null,
+    email varchar not null,
+    phone varchar(15) unique,
+    address varchar(250),
+    specialization VARCHAR(150) NOT NULL,
+    CONSTRAINT fk_physician_users
+        FOREIGN KEY (user_id)
+        REFERENCES dbo.users(user_id)
+);
+
+CREATE TABLE dbo.Chemist (
+    chemist_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    full_name varchar not null,
+    email varchar not null,
+    phone varchar(15) unique,
+    address varchar(255),
+    CONSTRAINT fk_chemist_users
+        FOREIGN KEY (user_id)
+        REFERENCES dbo.users(user_id)
+);
+
+CREATE TABLE dbo.Supplier (
+    supplier_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    full_name varchar not null,
+    email varchar not null,
+    phone varchar(15) unique,
+    address varchar(250),
+    company_name VARCHAR(200) NOT NULL,
+    CONSTRAINT fk_suppliers_users
+        FOREIGN KEY (user_id)
+        REFERENCES dbo.users(user_id)
+);
+
+CREATE TABLE dbo.Drug (
+    drug_id INT IDENTITY(1,1) PRIMARY KEY,
+    drug_name VARCHAR(150) UNIQUE NOT NULL,
+    description VARCHAR(MAX) NULL,
+    price DECIMAL(10,2) NOT NULL
+);
+
+CREATE TABLE dbo.Appointment (
+    appointment_id INT IDENTITY(1,1) PRIMARY KEY,
+    patient_id INT NOT NULL,
+    physician_id INT NOT NULL,
+    appointment_datetime DATETIME NOT NULL,
+    reason VARCHAR(MAX) NULL,
+    schedule_status VARCHAR(20) NOT NULL DEFAULT 'Scheduled',
+
+    CONSTRAINT fk_appointment_patient
+        FOREIGN KEY (patient_id)
+        REFERENCES dbo.patients(patient_id),
+
+    CONSTRAINT fk_appointment_physician
+        FOREIGN KEY (physician_id)
+        REFERENCES dbo.physician(physician_id),
+
+    CONSTRAINT chk_schedule_status
+        CHECK (schedule_status IN ('Scheduled', 'Rescheduled', 'Cancelled', 'Completed'))
+);
+
+CREATE TABLE dbo.Schedule (
+    schedule_id INT IDENTITY(1,1) PRIMARY KEY,
+    appointment_id INT NOT NULL,
+    schedule_date DATETIME NOT NULL,
+    schedule_status VARCHAR(20) NOT NULL DEFAULT 'Pending',
+
+    CONSTRAINT fk_schedule_appointment
+        FOREIGN KEY (appointment_id)
+        REFERENCES dbo.appointment(appointment_id),
+
+    CONSTRAINT chk_schedule_status_schedule
+        CHECK (schedule_status IN ('Pending', 'Confirmed', 'Completed', 'Cancelled'))
+);
+
+CREATE TABLE dbo.PhysicianAdvice (
+    physician_advice_id INT IDENTITY(1,1) PRIMARY KEY,
+    schedule_id INT NOT NULL,
+    advice VARCHAR(MAX) NOT NULL,
+
+    CONSTRAINT fk_physician_advice_schedule
+        FOREIGN KEY (schedule_id)
+        REFERENCES dbo.schedule(schedule_id)
+);
+
+CREATE TABLE dbo.PhysicianPrescription (
+    physician_prescrip_id INT IDENTITY(1,1) PRIMARY KEY,
+    physician_advice_id INT NOT NULL,
+    prescription VARCHAR(MAX) NOT NULL,
+    drug_id INT NOT NULL,
+    dosage INT NOT NULL,
+    duration_days INT NOT NULL,
+
+
+    CONSTRAINT fk_prescription_advice
+        FOREIGN KEY (physician_advice_id)
+        REFERENCES dbo.PhysicianAdvice(physician_advice_id)
+);
+
+CREATE TABLE dbo.DrugRequest (
+    drug_request_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    drug_info_text VARCHAR(MAX) NOT NULL,
+    request_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    request_status VARCHAR(20) NOT NULL DEFAULT 'Pending',
+    required_qty INT NOT NULL,
+
+    CONSTRAINT fk_drug_request_chemist
+        FOREIGN KEY (user_id)
+        REFERENCES dbo.chemist(user_id),
+
+
+    
+    CONSTRAINT fk_drug_request_physician
+        FOREIGN KEY (user_id)
+        REFERENCES dbo.Physician(user_id),
+
+    CONSTRAINT chk_request_status
+        CHECK (request_status IN ('Pending', 'Approved', 'Rejected', 'In Stock')),
+
+    CONSTRAINT chk_required_qty
+        CHECK (required_qty > 0)
+);
+
+CREATE TABLE dbo.PurchaseOrderHeader (
+    po_id INT IDENTITY(1,1) PRIMARY KEY,
+    po_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    supplier_id INT NOT NULL,
+    chemist_id INT NOT NULL,
+    po_status VARCHAR(20) NOT NULL DEFAULT 'Pending',
+
+    CONSTRAINT fk_po_supplier
+        FOREIGN KEY (supplier_id)
+        REFERENCES dbo.suppliers(supplier_id),
+
+    CONSTRAINT fk_po_chemist
+        FOREIGN KEY (chemist_id)
+        REFERENCES dbo.chemist(chemist_id),
+
+    CONSTRAINT chk_po_status
+        CHECK (po_status IN ('Pending', 'Approved', 'Rejected', 'Delivered'))
+);
+
+CREATE TABLE dbo.PurchaseProductLine (
+    PPL_id INT IDENTITY(1,1) PRIMARY KEY,
+    po_id INT NOT NULL,
+    drug_id INT NOT NULL,
+    sl_no INT NOT NULL,
+    qty INT NOT NULL,
+    note VARCHAR(MAX) NULL,
+    price_at_order DECIMAL(10,2) NOT NULL,
+
+    CONSTRAINT fk_ppl_po
+        FOREIGN KEY (po_id)
+        REFERENCES dbo.PurchaseOrderHeader(po_id),
+
+    CONSTRAINT fk_ppl_drug
+        FOREIGN KEY (drug_id)
+        REFERENCES dbo.drugs(drug_id),
+
+    CONSTRAINT chk_sl_no
+        CHECK (sl_no > 0),
+
+    CONSTRAINT chk_qty
+        CHECK (qty > 0),
+
+    CONSTRAINT chk_price_at_order
+        CHECK (price_at_order >= 0)
+);
