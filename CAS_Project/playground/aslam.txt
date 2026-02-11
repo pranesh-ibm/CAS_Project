@@ -1,0 +1,6 @@
+﻿namespace CAS_Project.playground
+{
+    public class aslam
+    {
+    }
+}
